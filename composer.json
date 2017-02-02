@@ -1,0 +1,12 @@
+{
+    "name": "gerro/bd",
+    "description": "Backdoor security",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Krystian Oziembala",
+            "email": "gerro@krystianoziembala.pl"
+        }
+    ],
+    "require": {}
+}
